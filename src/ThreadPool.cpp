@@ -1,7 +1,7 @@
 #include "pool/ThreadPool.hpp"
 
 
-std::string obj::QueuedTask::ThreadIdString(const std::thread::id& t_id) {
+std::string pool::QueuedTask::ThreadIdString(const std::thread::id& t_id) {
   std::ostringstream s;
   s << t_id;
   return s.str();
@@ -50,7 +50,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::WorkerLoop() {
   while (true) {
     // we made this std::optional to avoid the overhead of default constructing a QueuedTask
-    std::optional<obj::QueuedTask> optTask;
+    std::optional<pool::QueuedTask> optTask;
 
     {
       std::unique_lock lock(m_mutex);
@@ -80,20 +80,20 @@ void ThreadPool::WorkerLoop() {
         "Task #{} waited {:L} before starting on new thread: {}",
         optTask->taskNumber,
         waitTime,
-        obj::QueuedTask::ThreadIdString(optTask->threadId));
+        pool::QueuedTask::ThreadIdString(optTask->threadId));
     }
     else if (optTask->taskNumber > m_maxPreSpawnThread) {
       log = std::format(
         "Task #{} waited {:L} in queue before starting on thread: {}",
         optTask->taskNumber,
         waitTime,
-        obj::QueuedTask::ThreadIdString(optTask->threadId));
+        pool::QueuedTask::ThreadIdString(optTask->threadId));
     }
     else {
       log = std::format(
         "Task #{} assigned to already running thread: {}",
         optTask->taskNumber,
-        obj::QueuedTask::ThreadIdString(optTask->threadId));
+        pool::QueuedTask::ThreadIdString(optTask->threadId));
     }
 
     if (!log.empty()) {

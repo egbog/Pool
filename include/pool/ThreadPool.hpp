@@ -10,7 +10,7 @@
 
 class Logger;
 
-namespace obj
+namespace pool
 {
   struct QueuedTask
   {
@@ -57,7 +57,7 @@ private:
 
   std::mutex                  m_mutex; // Mutex for inserting tasks
   std::condition_variable     m_cv; // Cv to wait threads
-  std::queue<obj::QueuedTask> m_queue; // Task queue
+  std::queue<pool::QueuedTask> m_queue; // Task queue
   std::vector<std::jthread>   m_workerPool; // Container for dispatched worker threads
   size_t                      m_maxThreadsUser    = 0; // User-defined maximum number of dispatched threads
   size_t                      m_maxThreadsHw      = std::thread::hardware_concurrency(); // Hardware-defined maximum
