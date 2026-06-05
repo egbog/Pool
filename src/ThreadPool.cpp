@@ -18,7 +18,9 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
   m_maxPreSpawnThread = std::min(m_maxThreadsUser, safeMinimumThreads);
 
   for (size_t i = 0; i < m_maxPreSpawnThread; ++i) {
+    std::scoped_lock lock(m_mutex);
     AddThread([this] { WorkerLoop(); });
+    m_idleThreads++; // pre-spawned threads are idle until they pick up a task
   }
 
   m_poolActive = true;
@@ -47,7 +49,6 @@ void ThreadPool::WorkerLoop() {
 
     {
       std::unique_lock lock(m_mutex);
-      m_idleThreads++; // thread is now idle
       // make the thread wait until shutdown, or we insert a task
       m_cv.wait(lock, [this] { return m_shutdown || !m_queue.empty(); });
       m_idleThreads--; // thread is waking up
@@ -94,5 +95,7 @@ void ThreadPool::WorkerLoop() {
     }
 
     optTask->task(); // run job
+    
+    m_idleThreads++; // thread is idle again after finishing task
   }
 }

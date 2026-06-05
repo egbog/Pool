@@ -39,8 +39,9 @@ std::future<std::invoke_result_t<F, Args...>> ThreadPool::Enqueue(F&& t_f, Args&
     m_queue.emplace(std::packaged_task<void()>([t = std::move(task)]() mutable { t(); }), taskNumber);
 
     // If all threads are busy, and we haven't reached maxThreads, spawn a new one
-    if (m_idleThreads == 0 && ThreadCount() < m_maxThreadsUser) {
+    if (m_queue.size() > m_idleThreads && ThreadCount() < m_maxThreadsUser) {
       AddThread([this] { WorkerLoop(); });
+      m_idleThreads++; // new thread is idle until it picks up a task
     }
   }
 
