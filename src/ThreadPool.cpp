@@ -1,12 +1,5 @@
 #include "pool/ThreadPool.hpp"
 
-
-std::string pool::QueuedTask::ThreadIdString(const std::thread::id& t_id) {
-  std::ostringstream s;
-  s << t_id;
-  return s.str();
-}
-
 ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCount) {
   // if we are not able to get the amount of max concurrent threads
   if (m_maxThreadsUser == 0 || m_maxThreadsHw == 0) {
@@ -80,20 +73,20 @@ void ThreadPool::WorkerLoop() {
         "Task #{} waited {:L} before starting on new thread: {}",
         optTask->taskNumber,
         waitTime,
-        pool::QueuedTask::ThreadIdString(optTask->threadId));
+        optTask->threadId);
     }
     else if (optTask->taskNumber > m_maxPreSpawnThread) {
       log = std::format(
         "Task #{} waited {:L} in queue before starting on thread: {}",
         optTask->taskNumber,
         waitTime,
-        pool::QueuedTask::ThreadIdString(optTask->threadId));
+        optTask->threadId);
     }
     else {
       log = std::format(
         "Task #{} assigned to already running thread: {}",
         optTask->taskNumber,
-        pool::QueuedTask::ThreadIdString(optTask->threadId));
+        optTask->threadId);
     }
 
     if (!log.empty()) {

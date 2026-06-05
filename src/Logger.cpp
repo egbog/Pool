@@ -1,7 +1,5 @@
 #include "pool/Logger/Logger.hpp"
 
-#include "pool/ThreadPool.hpp" // TODO: remove this
-
 #include <iostream>
 
 Logger::~Logger() {
@@ -34,7 +32,7 @@ void Logger::DispatchWorkerThread() {
  * @brief Signals all threads to wake up and finish printing any outstanding messages.
  */
 void Logger::Shutdown() {
-  Log<Debug>(std::format("Logger worker closed on thread: {}", pool::QueuedTask::ThreadIdString(m_workerThreadId)));
+  Log<Debug>(std::format("Logger worker closed on thread: {}", m_workerThreadId));
   {
     std::lock_guard lock(m_waitLogMutex);
     m_shutdown = true;
@@ -80,7 +78,7 @@ void Logger::ThreadSafeLogMessage(LogEntry t_entry) {
  */
 void Logger::WorkerThread() {
   m_workerThreadId = std::this_thread::get_id();
-  Log<Debug>(std::format("Logger worker dispatched to thread: {}", pool::QueuedTask::ThreadIdString(m_workerThreadId)));
+  Log<Debug>(std::format("Logger worker dispatched to thread: {}", m_workerThreadId));
   while (true) {
     {
       std::unique_lock lock(m_waitLogMutex);
