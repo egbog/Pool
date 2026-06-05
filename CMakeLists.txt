@@ -6,6 +6,14 @@ endif()
 
 project(pool LANGUAGES CXX)
 
+option(POOL_BUILD_SANDBOX "Build debug sandbox executable" OFF)
+
+if(POOL_BUILD_SANDBOX)
+    add_executable(pool_sandbox sandbox/main.cpp)
+    target_link_libraries(pool_sandbox PRIVATE pool::pool)
+    target_compile_features(pool_sandbox PRIVATE cxx_std_23)
+endif()
+
 file(GLOB_RECURSE POOL_SRC
     "src/*.cpp"
     "include/*.h"
