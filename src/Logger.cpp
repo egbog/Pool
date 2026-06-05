@@ -34,7 +34,7 @@ void Logger::DispatchWorkerThread() {
 void Logger::Shutdown() {
   Log<Debug>(std::format("Logger worker closed on thread: {}", m_workerThreadId));
   {
-    std::lock_guard lock(m_waitLogMutex);
+    std::scoped_lock lock(m_waitLogMutex);
     m_shutdown = true;
   }
 
@@ -65,7 +65,7 @@ constexpr WORD Logger::GetSeverityColor(const LogSeverity t_logLevel) {
  */
 void Logger::ThreadSafeLogMessage(LogEntry t_entry) {
   {
-    std::lock_guard lock(m_waitLogMutex);
+    std::scoped_lock lock(m_waitLogMutex);
     m_logQueue.emplace(std::move(t_entry));
   }
 
