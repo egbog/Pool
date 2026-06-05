@@ -10,7 +10,7 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
   // make sure user did not request more threads than hw is capable of
   m_maxThreadsUser = std::min(m_maxThreadsUser, m_maxThreadsHw);
 
-  // half of physical cores, at least 1
+  // half of total cores, at least 1
   const size_t safeMinimumThreads = std::max<size_t>(1, m_maxThreadsUser / 2);
 
   // pre-spawn a few threads that can be picked up by new tasks before creating more
