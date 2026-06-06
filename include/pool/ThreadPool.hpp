@@ -22,12 +22,12 @@ namespace pool
     QueuedTask() = delete;
 
     QueuedTask(std::move_only_function<void()> t_task, const unsigned int t_taskNumber) : task(std::move(t_task)), timer(Timer()),
-                                                                                     taskNumber(t_taskNumber) {}
+      taskNumber(t_taskNumber) {}
 
     std::move_only_function<void()> task;
-    Timer                      timer;
-    unsigned int               taskNumber;
-    std::thread::id            threadId;
+    Timer                           timer;
+    unsigned int                    taskNumber;
+    std::thread::id                 threadId;
   };
 }
 
