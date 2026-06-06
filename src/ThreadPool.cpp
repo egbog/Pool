@@ -27,7 +27,7 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
   try {
     for (size_t i = 0; i < m_maxPreSpawnThread; ++i) {
       std::scoped_lock lock(m_mutex);
-      AddThread([this] { WorkerLoop(); });
+      AddThread([this, t_st = m_stopSource.get_token()] { WorkerLoop(t_st); });
       m_idleThreads++; // pre-spawned threads are idle until they pick up a task
     }
   }
@@ -39,23 +39,19 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
     m_logger->Log<Logger::Warning>(
       std::format("Spawned only {} of {} workers: {}", m_workerPool.size(), m_maxPreSpawnThread, e.what()));
 
-    m_maxThreadsUser = m_workerPool.size(); // cap growth to what actually succeeded
+    m_maxThreadsUser    = m_workerPool.size(); // cap growth to what actually succeeded
     m_maxPreSpawnThread = m_maxThreadsUser;
   }
 }
 
 ThreadPool::~ThreadPool() {
-  {
-    std::scoped_lock lock(m_mutex);
-    m_shutdown = true;
-  }
-  m_cv.notify_all();
-  // No need to manually join m_workers, jthreads will join automatically
+  m_stopSource.request_stop(); // single signal; the cv stop-aware wait wakes workers
+
   const std::string msg = std::format("Thread Pool closed after processing {} tasks.", static_cast<unsigned int>(m_totalTasks));
   m_logger->Log<Logger::Debug>(msg);
 }
 
-void ThreadPool::WorkerLoop() {
+void ThreadPool::WorkerLoop(const std::stop_token& t_st) {
   while (true) {
     // we made this std::optional to avoid the overhead of default constructing a QueuedTask
     std::optional<pool::QueuedTask> job;
@@ -63,12 +59,13 @@ void ThreadPool::WorkerLoop() {
     {
       std::unique_lock lock(m_mutex);
       // make the thread wait until shutdown, or we insert a task
-      m_cv.wait(lock, [this] { return m_shutdown || !m_queue.empty(); });
-      m_idleThreads--; // thread is waking up
+      m_cv.wait(lock, t_st, [this] { return !m_queue.empty(); });
 
-      if (m_shutdown && m_queue.empty()) {
+      if (m_queue.empty()) {
         break;
       }
+
+      m_idleThreads--; // thread is waking up
 
       // move the next element in the queue to a temp var to run
       job = std::move(m_queue.front());

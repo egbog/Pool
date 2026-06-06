@@ -20,21 +20,22 @@ std::future<std::invoke_result_t<F, Args...>> ThreadPool::Enqueue(F&& t_f, Args&
   // get future of task with the proper return type
   auto fut = task.get_future();
 
+  std::lock_guard lock(m_mutex);
+
   // don't allow enqueueing after stopping the pool
-  if (m_shutdown) {
+  if (m_stopSource.stop_requested()) {
     m_logger->Log<Logger::Warning>("Prevented enqueue on stopped Thread Pool");
     return fut;
   }
 
   {
-    std::lock_guard lock(m_mutex);
-    unsigned int    taskNumber = ++m_totalTasks;
+    unsigned int taskNumber = ++m_totalTasks;
     // lambda wrap to a void() task to insert into queue
-    m_queue.emplace(std::packaged_task<void()>([t = std::move(task)]() mutable { t(); }), taskNumber);
+    m_queue.emplace([t = std::move(task)]() mutable { t(); }, taskNumber);
 
     // If all threads are busy, and we haven't reached maxThreads, spawn a new one
     if (m_queue.size() > m_idleThreads && ThreadCount() < m_maxThreadsUser) {
-      AddThread([this] { WorkerLoop(); });
+      AddThread([this, t_st = m_stopSource.get_token()] { WorkerLoop(t_st); });
       m_idleThreads++; // new thread is idle until it picks up a task
     }
   }
