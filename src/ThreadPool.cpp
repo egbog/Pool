@@ -3,8 +3,8 @@
 ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCount) {
   // if we are not able to get the amount of max concurrent threads
   if (m_maxThreadsHw == 0) {
-    m_logger->Log<Logger::Warning>("Unable to determine hardware concurrency, " "defaulting to single-threaded mode.");
-    // only allow 1 thread
+    m_logger->Log<Logger::Warning>("Unable to determine hardware concurrency, defaulting to a single worker.");
+    // only allow 1 worker
     m_maxThreadsHw = 1;
   }
 
