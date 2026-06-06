@@ -31,7 +31,7 @@ class ThreadPool
 public:
   //-------------------------------------------------------------------------------------------------------------------
   // Constructors/operators
-  explicit ThreadPool(size_t t_threadCount);
+  explicit ThreadPool(size_t t_threadCount = 0); // 0 = auto
   ~ThreadPool();
   ThreadPool& operator=(ThreadPool& t_other)  = delete;
   ThreadPool& operator=(ThreadPool&& t_other) = delete;

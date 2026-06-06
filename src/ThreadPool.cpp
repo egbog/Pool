@@ -2,9 +2,16 @@
 
 ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCount) {
   // if we are not able to get the amount of max concurrent threads
-  if (m_maxThreadsUser == 0 || m_maxThreadsHw == 0) {
-    // only run on the main thread
-    return;
+  if (m_maxThreadsHw == 0) {
+    m_logger->Log<Logger::Warning>("Unable to determine hardware concurrency, " "defaulting to single-threaded mode.");
+    // only allow 1 thread
+    m_maxThreadsHw = 1;
+  }
+
+  // default to max hardware threads if user did not specify a thread count
+  if (m_maxThreadsUser == 0) {
+    m_maxThreadsUser = m_maxThreadsHw;
+    m_logger->Log<Logger::Info>(std::format("No thread count specified, defaulting to hardware concurrency: {}", m_maxThreadsHw));
   }
 
   // make sure user did not request more threads than hw is capable of
