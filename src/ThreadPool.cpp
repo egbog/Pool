@@ -58,7 +58,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::WorkerLoop() {
   while (true) {
     // we made this std::optional to avoid the overhead of default constructing a QueuedTask
-    std::optional<pool::QueuedTask> optTask;
+    std::optional<pool::QueuedTask> job;
 
     {
       std::unique_lock lock(m_mutex);
@@ -71,40 +71,40 @@ void ThreadPool::WorkerLoop() {
       }
 
       // move the next element in the queue to a temp var to run
-      optTask = std::move(m_queue.front());
+      job = std::move(m_queue.front());
       m_queue.pop();
     }
 
     // Measure how long this job waited in the queue
-    const auto waitTime = optTask->timer.Elapsed();
+    const auto waitTime = job->timer.Elapsed();
     // assign threadId once the task gets picked up
-    optTask->threadId = std::this_thread::get_id();
+    job->threadId = std::this_thread::get_id();
 
     std::string log;
 
-    if (optTask->taskNumber > m_maxPreSpawnThread && optTask->taskNumber <= m_maxThreadsUser) {
+    if (job->taskNumber > m_maxPreSpawnThread && job->taskNumber <= m_maxThreadsUser) {
       log = std::format(
         "Task #{} waited {:L} before starting on new thread: {}",
-        optTask->taskNumber,
+        job->taskNumber,
         waitTime,
-        optTask->threadId);
+        job->threadId);
     }
-    else if (optTask->taskNumber > m_maxPreSpawnThread) {
+    else if (job->taskNumber > m_maxPreSpawnThread) {
       log = std::format(
         "Task #{} waited {:L} in queue before starting on thread: {}",
-        optTask->taskNumber,
+        job->taskNumber,
         waitTime,
-        optTask->threadId);
+        job->threadId);
     }
     else {
-      log = std::format("Task #{} assigned to already running thread: {}", optTask->taskNumber, optTask->threadId);
+      log = std::format("Task #{} assigned to already running thread: {}", job->taskNumber, job->threadId);
     }
 
     if (!log.empty()) {
       m_logger->Log<Logger::Debug>(log);
     }
 
-    optTask->task(); // run job
+    job->task(); // run job
 
     m_idleThreads++; // thread is idle again after finishing task
   }
