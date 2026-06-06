@@ -21,11 +21,11 @@ namespace pool
   {
     QueuedTask() = delete;
 
-    QueuedTask(std::move_only_function<void()> t_task, const unsigned int t_taskNumber) : task(std::move(t_task)), timer(Timer()),
+    QueuedTask(std::move_only_function<void()> t_task, const unsigned int t_taskNumber) : task(std::move(t_task)),
       taskNumber(t_taskNumber) {}
 
     std::move_only_function<void()> task;
-    Timer                           timer;
+    Timer                           timer{};
     unsigned int                    taskNumber;
     std::thread::id                 threadId;
   };
