@@ -47,7 +47,7 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
 ThreadPool::~ThreadPool() {
   m_stopSource.request_stop(); // single signal; the cv stop-aware wait wakes workers
 
-  const std::string msg = std::format("Thread Pool closed after processing {} tasks.", static_cast<unsigned int>(m_totalTasks));
+  const std::string msg = std::format("Thread Pool closed after accepting {} tasks.", static_cast<unsigned int>(m_totalTasks));
   m_logger->Log<Logger::Debug>(msg);
 }
 
