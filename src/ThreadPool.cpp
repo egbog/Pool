@@ -88,10 +88,8 @@ void ThreadPool::WorkerLoop(const std::stop_token& t_st) {
     else {
       log = std::format("Task #{} assigned to already running thread: {}", job->taskNumber, job->threadId);
     }
-
-    if (!log.empty()) {
-      m_logger->Log<Logger::Debug>(log);
-    }
+    
+    m_logger->Log<Logger::Debug>(log);
 
     job->task(); // run job
 
