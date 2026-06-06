@@ -6,7 +6,7 @@ void ThreadPool::AddThread(F&& t_f) {
 }
 
 template <typename F, typename... Args>
-std::future<std::invoke_result_t<F, Args...>> ThreadPool::Enqueue(F&& t_f, Args&&... t_args) {
+std::expected<std::future<std::invoke_result_t<F, Args...>>, pool::EnqueueError> ThreadPool::Enqueue(F&& t_f, Args&&... t_args) {
   // the return type of the function being passed
   using ReturnT = std::invoke_result_t<F, Args...>;
   // Wrap the function and its arguments into a packaged_task
@@ -25,7 +25,7 @@ std::future<std::invoke_result_t<F, Args...>> ThreadPool::Enqueue(F&& t_f, Args&
   // don't allow enqueueing after stopping the pool
   if (m_stopSource.stop_requested()) {
     m_logger->Log<Logger::Warning>("Prevented enqueue on stopped Thread Pool");
-    return fut;
+    return std::unexpected(pool::EnqueueError::PoolStopped);
   }
 
   {

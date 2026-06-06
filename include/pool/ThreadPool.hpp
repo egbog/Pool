@@ -3,6 +3,8 @@
 
 #include "Time/Timer.hpp"
 
+#include <expected>
+#include <functional>
 #include <future>
 #include <queue>
 
@@ -10,6 +12,11 @@ class Logger;
 
 namespace pool
 {
+  enum class EnqueueError
+  {
+    PoolStopped,
+  };
+
   struct QueuedTask
   {
     QueuedTask() = delete;
@@ -41,7 +48,9 @@ public:
   void AddThread(F&& t_f);
 
   template <typename F, typename... Args>
-  std::future<std::invoke_result_t<F, Args...>> Enqueue(F&& t_f, Args&&... t_args);
+  [[nodiscard]] std::expected<std::future<std::invoke_result_t<F, Args...>>, pool::EnqueueError> Enqueue(
+    F&&       t_f,
+    Args&&... t_args);
 
   [[nodiscard]] size_t ThreadCount() const { return m_workerPool.size(); }
 
