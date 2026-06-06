@@ -83,18 +83,10 @@ void ThreadPool::WorkerLoop() {
     std::string log;
 
     if (job->taskNumber > m_maxPreSpawnThread && job->taskNumber <= m_maxThreadsUser) {
-      log = std::format(
-        "Task #{} waited {:L} before starting on new thread: {}",
-        job->taskNumber,
-        waitTime,
-        job->threadId);
+      log = std::format("Task #{} waited {:L} before starting on new thread: {}", job->taskNumber, waitTime, job->threadId);
     }
     else if (job->taskNumber > m_maxPreSpawnThread) {
-      log = std::format(
-        "Task #{} waited {:L} in queue before starting on thread: {}",
-        job->taskNumber,
-        waitTime,
-        job->threadId);
+      log = std::format("Task #{} waited {:L} in queue before starting on thread: {}", job->taskNumber, waitTime, job->threadId);
     }
     else {
       log = std::format("Task #{} assigned to already running thread: {}", job->taskNumber, job->threadId);
