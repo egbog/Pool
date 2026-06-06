@@ -6,8 +6,6 @@
 #include <future>
 #include <queue>
 
-// TODO: shutdown function?
-
 class Logger;
 
 namespace pool
