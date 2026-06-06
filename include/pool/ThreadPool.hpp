@@ -62,7 +62,6 @@ private:
   size_t                      m_maxPreSpawnThread = 0; // Calculated amount of threads to dispatch pre-emptively
   size_t                      m_idleThreads       = 0; // Amount of dispatched threads that are currently idle
   bool                        m_shutdown          = false;
-  bool                        m_poolActive        = false;
   std::atomic<unsigned int>   m_totalTasks        = 0; // Global task counter
   Logger*                     m_logger            = &Logger::Instance();
 };

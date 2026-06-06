@@ -24,20 +24,27 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
   // only spawn as many threads as the cpu has, if its a double core, only spawn one
   m_maxPreSpawnThread = std::min(m_maxThreadsUser, safeMinimumThreads);
 
-  for (size_t i = 0; i < m_maxPreSpawnThread; ++i) {
-    std::scoped_lock lock(m_mutex);
-    AddThread([this] { WorkerLoop(); });
-    m_idleThreads++; // pre-spawned threads are idle until they pick up a task
+  try {
+    for (size_t i = 0; i < m_maxPreSpawnThread; ++i) {
+      std::scoped_lock lock(m_mutex);
+      AddThread([this] { WorkerLoop(); });
+      m_idleThreads++; // pre-spawned threads are idle until they pick up a task
+    }
   }
+  catch (const std::system_error& e) {
+    if (m_workerPool.empty()) {
+      throw; // couldn't get even one worker -> no pool, fail
+    }
 
-  m_poolActive = true;
+    m_logger->Log<Logger::Warning>(
+      std::format("Spawned only {} of {} workers: {}", m_workerPool.size(), m_maxPreSpawnThread, e.what()));
+
+    m_maxThreadsUser = m_workerPool.size(); // cap growth to what actually succeeded
+    m_maxPreSpawnThread = m_maxThreadsUser;
+  }
 }
 
 ThreadPool::~ThreadPool() {
-  if (!m_poolActive) {
-    return;
-  }
-
   {
     std::scoped_lock lock(m_mutex);
     m_shutdown = true;
@@ -46,7 +53,6 @@ ThreadPool::~ThreadPool() {
   // No need to manually join m_workers, jthreads will join automatically
   const std::string msg = std::format("Thread Pool closed after processing {} tasks.", static_cast<unsigned int>(m_totalTasks));
   m_logger->Log<Logger::Debug>(msg);
-  m_poolActive = false;
 }
 
 void ThreadPool::WorkerLoop() {
@@ -91,10 +97,7 @@ void ThreadPool::WorkerLoop() {
         optTask->threadId);
     }
     else {
-      log = std::format(
-        "Task #{} assigned to already running thread: {}",
-        optTask->taskNumber,
-        optTask->threadId);
+      log = std::format("Task #{} assigned to already running thread: {}", optTask->taskNumber, optTask->threadId);
     }
 
     if (!log.empty()) {
@@ -102,7 +105,7 @@ void ThreadPool::WorkerLoop() {
     }
 
     optTask->task(); // run job
-    
+
     m_idleThreads++; // thread is idle again after finishing task
   }
 }

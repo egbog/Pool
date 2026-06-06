@@ -26,12 +26,6 @@ std::future<std::invoke_result_t<F, Args...>> ThreadPool::Enqueue(F&& t_f, Args&
     return fut;
   }
 
-  // run on main thread only
-  if (m_maxThreadsUser == 0) {
-    task();
-    return fut;
-  }
-
   {
     std::lock_guard lock(m_mutex);
     unsigned int    taskNumber = ++m_totalTasks;
