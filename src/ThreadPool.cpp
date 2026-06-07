@@ -11,7 +11,7 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
   // default to max hardware threads if user did not specify a thread count
   if (m_maxThreadsUser == 0) {
     m_maxThreadsUser = m_maxThreadsHw;
-    m_logger->Log<Logger::Info>(std::format("No thread count specified, defaulting to hardware concurrency: {}", m_maxThreadsHw));
+    m_logger->Log<Logger::Info>("No thread count specified, defaulting to hardware concurrency: {}", m_maxThreadsHw);
   }
 
   // make sure user did not request more threads than hw is capable of
@@ -36,8 +36,7 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
       throw; // couldn't get even one worker -> no pool, fail
     }
 
-    m_logger->Log<Logger::Warning>(
-      std::format("Spawned only {} of {} workers: {}", m_workerPool.size(), m_maxPreSpawnThread, e.what()));
+    m_logger->Log<Logger::Warning>("Spawned only {} of {} workers: {}", m_workerPool.size(), m_maxPreSpawnThread, e.what());
 
     m_maxThreadsUser    = m_workerPool.size(); // cap growth to what actually succeeded
     m_maxPreSpawnThread = m_maxThreadsUser;
@@ -47,9 +46,8 @@ ThreadPool::ThreadPool(const size_t t_threadCount) : m_maxThreadsUser(t_threadCo
 ThreadPool::~ThreadPool() {
   m_stopSource.request_stop(); // single signal; the cv stop-aware wait wakes workers
   m_workerPool.clear();   // ~jthread joins each worker now, before any member dies
-
-  const std::string msg = std::format("Thread Pool closed after accepting {} tasks.", static_cast<unsigned int>(m_totalTasks));
-  m_logger->Log<Logger::Debug>(msg);
+  
+  m_logger->Log<Logger::Debug>("Thread Pool closed after accepting {} tasks.", static_cast<unsigned int>(m_totalTasks));
 }
 
 void ThreadPool::WorkerLoop(const std::stop_token& t_st) {
@@ -77,20 +75,16 @@ void ThreadPool::WorkerLoop(const std::stop_token& t_st) {
     const auto waitTime = job->timer.Elapsed();
     // assign threadId once the task gets picked up
     job->threadId = std::this_thread::get_id();
-
-    std::string log;
-
+    
     if (job->taskNumber > m_maxPreSpawnThread && job->taskNumber <= m_maxThreadsUser) {
-      log = std::format("Task #{} waited {:L} before starting on new thread: {}", job->taskNumber, waitTime, job->threadId);
+      m_logger->Log<Logger::Debug>("Task #{} waited {:L} before starting on new thread: {}", job->taskNumber, waitTime, job->threadId);
     }
     else if (job->taskNumber > m_maxPreSpawnThread) {
-      log = std::format("Task #{} waited {:L} in queue before starting on thread: {}", job->taskNumber, waitTime, job->threadId);
+      m_logger->Log<Logger::Debug>("Task #{} waited {:L} in queue before starting on thread: {}", job->taskNumber, waitTime, job->threadId);
     }
     else {
-      log = std::format("Task #{} assigned to already running thread: {}", job->taskNumber, job->threadId);
+      m_logger->Log<Logger::Debug>("Task #{} assigned to already running thread: {}", job->taskNumber, job->threadId);
     }
-    
-    m_logger->Log<Logger::Debug>(log);
 
     job->task(); // run job
 
