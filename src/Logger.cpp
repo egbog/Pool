@@ -8,6 +8,10 @@ Logger::~Logger() {
   m_diskFile.close();
 }
 
+void Logger::Start() {
+  DispatchWorkerThread();
+}
+
 /*!
  * @brief Creates a jthread in a private member of this instance
  */
@@ -44,8 +48,6 @@ void Logger::Shutdown() {
   if (m_thread.joinable()) {
     m_thread.join(); // wait until worker finishes flushing
   }
-  
-  FlushQueue();
 }
 
 bool Logger::IsLogLevelEnabled(const LogSeverity t_logLevel, const bool t_disk) const {

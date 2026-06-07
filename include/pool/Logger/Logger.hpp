@@ -60,8 +60,9 @@ public:
     static Logger instance;
     return instance;
   }
+  
+  void Start();
 
-  void DispatchWorkerThread();
 
   template <LogSeverity Severity, typename ... Args>
   void Log(std::format_string<Args...> t_fmt, Args&&... t_args) {
@@ -88,6 +89,7 @@ private:
   void                  ThreadSafeLogMessage(LogEntry t_entry);
   void                  WorkerThread();
   void                  FlushQueue();
+  void DispatchWorkerThread();
 
   std::jthread                       m_thread;         // Worker thread
   std::queue<LogEntry>               m_logQueue;       // The message queue
