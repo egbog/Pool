@@ -129,7 +129,7 @@ void Logger::FlushQueue() {
         std::chrono::current_zone(),
         time_point_cast<std::chrono::duration<double, std::milli>>(std::chrono::system_clock::now()));
 
-      m_diskFile << std::format("[{0:%F}T{0:%T}] {1}: {2}\n", time, m_severityNames[severity], message);
+      m_diskFile << std::format("[{0:%F}T{0:%T}]: [{1}] {2}\n", time, m_severityNames[severity], message);
       m_diskFile.flush();
     }
 
