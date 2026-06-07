@@ -110,7 +110,7 @@ void Logger::FlushQueue() {
 
   std::queue<LogEntry> local;
   {
-    std::lock_guard lock(m_waitLogMutex);
+    std::scoped_lock lock(m_waitLogMutex);
     std::swap(local, m_logQueue); // grab everything fast
   }
 
