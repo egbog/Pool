@@ -12,6 +12,7 @@ Logger::~Logger() {
  * @brief Creates a jthread in a private member of this instance
  */
 void Logger::DispatchWorkerThread() {
+  // TODO: disk logging only happens if we dispatch a thread
   m_logToDisk = currentDiskLogLevel != None;
   if (m_logToDisk) {
     // create directory
@@ -32,7 +33,7 @@ void Logger::DispatchWorkerThread() {
  * @brief Signals all threads to wake up and finish printing any outstanding messages.
  */
 void Logger::Shutdown() {
-  Log<Debug>(std::format("Logger worker closed on thread: {}", m_workerThreadId));
+  Log<Debug>("Logger worker closed on thread: {}", m_workerThreadId);
   {
     std::scoped_lock lock(m_waitLogMutex);
     m_shutdown = true;
@@ -43,10 +44,18 @@ void Logger::Shutdown() {
   if (m_thread.joinable()) {
     m_thread.join(); // wait until worker finishes flushing
   }
+  
+  FlushQueue();
 }
 
 bool Logger::IsLogLevelEnabled(const LogSeverity t_logLevel, const bool t_disk) const {
   return t_disk ? t_logLevel <= currentDiskLogLevel : t_logLevel <= currentLogLevel;
+}
+
+bool Logger::ShouldEnqueue(const LogSeverity t_severity) const {
+  const bool wantConsole = IsLogLevelEnabled(t_severity);                 // severity <= currentLogLevel
+  const bool wantDisk    = m_logToDisk && IsLogLevelEnabled(t_severity, true);
+  return wantConsole || wantDisk;
 }
 
 constexpr WORD Logger::GetSeverityColor(const LogSeverity t_logLevel) {
@@ -78,7 +87,7 @@ void Logger::ThreadSafeLogMessage(LogEntry t_entry) {
  */
 void Logger::WorkerThread() {
   m_workerThreadId = std::this_thread::get_id();
-  Log<Debug>(std::format("Logger worker dispatched to thread: {}", m_workerThreadId));
+  Log<Debug>("Logger worker dispatched to thread: {}", m_workerThreadId);
   while (true) {
     {
       std::unique_lock lock(m_waitLogMutex);

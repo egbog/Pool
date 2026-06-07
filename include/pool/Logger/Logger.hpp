@@ -62,9 +62,14 @@ public:
 
   void DispatchWorkerThread();
 
-  template <LogSeverity Severity>
-  void Log(const std::string& t_entry) {
-    ThreadSafeLogMessage(LogEntry(t_entry, Severity));
+  template <LogSeverity Severity, typename ... Args>
+  void Log(std::format_string<Args...> t_fmt, Args&&... t_args) {
+    // front-end filter: skip before formatting or locking if no sink wants this severity
+    if (!ShouldEnqueue(Severity)) {
+      return;
+    }
+    
+    ThreadSafeLogMessage(LogEntry(std::format(t_fmt, std::forward<Args>(t_args)...), Severity));
   }
 
   void Shutdown();
@@ -77,6 +82,7 @@ public:
 private:
   Logger() = default;
   [[nodiscard]] bool    IsLogLevelEnabled(LogSeverity t_logLevel, bool t_disk = false) const;
+  [[nodiscard]] bool    ShouldEnqueue(LogSeverity t_severity) const;
   constexpr static WORD GetSeverityColor(LogSeverity t_logLevel);
   void                  ThreadSafeLogMessage(LogEntry t_entry);
   void                  WorkerThread();
@@ -88,7 +94,7 @@ private:
   std::condition_variable            m_cv;             // Cv to wait thread
   std::thread::id                    m_workerThreadId; // The thread id of the dispatched worker
   bool                               m_shutdown  = false;
-  bool                               m_logToDisk = false;
+  bool                               m_logToDisk = true; // TODO: there's no way to toggle this
   std::ofstream                      m_diskFile; // disk log file
   std::map<LogSeverity, std::string> m_severityNames = {{Error, "Error"}, {Warning, "Warning"}, {Info, "Info"}, {Debug, "Debug"}};
 };
