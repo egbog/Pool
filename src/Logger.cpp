@@ -16,7 +16,6 @@ void Logger::Start() {
  * @brief Creates a jthread in a private member of this instance
  */
 void Logger::DispatchWorkerThread() {
-  // TODO: disk logging only happens if we dispatch a thread
   m_logToDisk = currentDiskLogLevel != None;
   if (m_logToDisk) {
     // create directory
