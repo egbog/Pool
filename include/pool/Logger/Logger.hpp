@@ -60,17 +60,17 @@ public:
     static Logger instance;
     return instance;
   }
-  
+
   void Start();
 
 
-  template <LogSeverity Severity, typename ... Args>
+  template <LogSeverity Severity, typename... Args>
   void Log(std::format_string<Args...> t_fmt, Args&&... t_args) {
     // front-end filter: skip before formatting or locking if no sink wants this severity
     if (!ShouldEnqueue(Severity)) {
       return;
     }
-    
+
     ThreadSafeLogMessage(LogEntry(std::format(t_fmt, std::forward<Args>(t_args)...), Severity));
   }
 
@@ -78,8 +78,8 @@ public:
 
   LogSeverity           currentLogLevel     = Debug; // The severity level of log messages to print
   LogSeverity           currentDiskLogLevel = Debug; // The severity level of log messages to print
-  std::filesystem::path pathToLog = "logs/";
-  std::string           logName = "log.txt";
+  std::filesystem::path pathToLog           = "logs/";
+  std::string           logName             = "log.txt";
 
 private:
   Logger() = default;
@@ -89,7 +89,7 @@ private:
   void                  ThreadSafeLogMessage(LogEntry t_entry);
   void                  WorkerThread();
   void                  FlushQueue();
-  void DispatchWorkerThread();
+  void                  DispatchWorkerThread();
 
   std::jthread                       m_thread;         // Worker thread
   std::queue<LogEntry>               m_logQueue;       // The message queue
@@ -99,6 +99,6 @@ private:
   std::once_flag                     m_startFlag;
   bool                               m_shutdown  = false;
   bool                               m_logToDisk = true; // TODO: there's no way to toggle this
-  std::ofstream                      m_diskFile; // disk log file
+  std::ofstream                      m_diskFile;         // disk log file
   std::map<LogSeverity, std::string> m_severityNames = {{Error, "Error"}, {Warning, "Warning"}, {Info, "Info"}, {Debug, "Debug"}};
 };
