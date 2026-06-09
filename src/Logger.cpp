@@ -9,7 +9,7 @@ Logger::~Logger() {
 }
 
 void Logger::Start() {
-  DispatchWorkerThread();
+  std::call_once(m_startFlag, [this] { DispatchWorkerThread(); });
 }
 
 /*!

@@ -96,6 +96,7 @@ private:
   std::mutex                         m_waitLogMutex;   // Mutex for inserting and popping into the queue
   std::condition_variable            m_cv;             // Cv to wait thread
   std::thread::id                    m_workerThreadId; // The thread id of the dispatched worker
+  std::once_flag                     m_startFlag;
   bool                               m_shutdown  = false;
   bool                               m_logToDisk = true; // TODO: there's no way to toggle this
   std::ofstream                      m_diskFile; // disk log file
