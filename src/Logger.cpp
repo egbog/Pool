@@ -75,6 +75,8 @@ constexpr WORD Logger::GetSeverityColor(const LogSeverity t_logLevel) {
  * @param t_entry The log entry
  */
 void Logger::ThreadSafeLogMessage(LogEntry t_entry) {
+  std::call_once(m_startFlag, [this] { DispatchWorkerThread(); });
+  
   {
     std::scoped_lock lock(m_waitLogMutex);
     m_logQueue.emplace(std::move(t_entry));
